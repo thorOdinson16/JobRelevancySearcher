@@ -1,0 +1,14 @@
+geopy
+nltk
+pdf2image
+pymongo
+reportlab
+scikit-learn
+streamlit
+streamlit-folium
+transformers
+pytesseract
+spacy
+folium
+torch
+PyPDF2
