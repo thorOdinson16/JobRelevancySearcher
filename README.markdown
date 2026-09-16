@@ -2,74 +2,127 @@
 
 ## Overview
 
-JobRelevancySearcher is an advanced, AI-driven platform designed to streamline the job search process. It integrates real-time job scraping, semantic search, location-based filtering, and intelligent resume parsing to deliver highly relevant job matches tailored to your skills and preferences. Powered by Streamlit and hosted on the cloud, JobRelevancySearcher provides a modern, user-friendly experience for job seekers.
+JobRelevancySearcher is an AI-driven platform that streamlines the job search
+process. It scrapes live job postings from [Naukri.com](https://www.naukri.com),
+stores them in PostgreSQL, and ranks them against an uploaded resume using
+sentence embeddings with optional location-aware scoring. A built-in resume PDF
+generator rounds out the toolkit.
 
-## Key Features
+## Features
 
-- **Real-Time Job Scraping**  
-  Pulls the latest job postings from [Naukri.com](https://www.naukri.com), ensuring access to current opportunities across industries.
-
-- **Semantic Job Matching**  
-  Employs Sentence-BERT (SBERT) to perform intelligent, semantic-based matching, aligning job postings with your skills, experience, and career goals.
-
-- **Location-Based Optimization**  
-  Uses Geopy to prioritize jobs near your preferred location, making your job search more practical and commute-friendly.
-
-- **Smart Resume Parsing**  
-  Analyzes your resume to extract key skills and experiences, matching them with job description keywords for optimized applications.
-
-- **Streamlit-Powered Interface**  
-  Delivers a clean, interactive UI built with Streamlit, deployed on the cloud for seamless access from any device.
+- **Real-time job scraping** from Naukri.com via Selenium, deduplicated on upsert.
+- **Semantic job matching** using a Sentence-Transformers model
+  (`all-MiniLM-L6-v2`).
+- **Location-based scoring** with Geopy distance decay and an interactive
+  Folium map.
+- **Smart resume parsing** (text extraction + OCR fallback) with spaCy entity
+  recognition.
+- **Resume PDF generator** with keyword-driven competency descriptions.
+- **Streamlit UI** for both modes.
 
 ## Tech Stack
 
-- **Web Scraping**: Python, BeautifulSoup/Scrapy
-- **Semantic Search**: Sentence-BERT (SBERT)
-- **Geolocation**: Geopy
-- **Frontend & Deployment**: Streamlit, Cloud Hosting
-- **Backend**: Python
-- **Dependencies**: `sentence-transformers`, `geopy`, `beautifulsoup4`, `requests`
+- **Frontend**: Streamlit, streamlit-folium, Folium
+- **Database**: PostgreSQL (SQLAlchemy 2.0 ORM + psycopg2)
+- **Scraping**: Selenium
+- **NLP/ML**: Transformers, spaCy, scikit-learn, PyTorch
+- **PDF**: pypdf, pdf2image, pytesseract, reportlab
+- **Geo**: geopy, Nominatim
+
+## Project Structure
+
+```
+app.py                     # Streamlit entrypoint
+config.py                  # Environment-driven configuration
+db.py                      # Engine, schema bootstrap, upsert helpers
+src/
+  models.py                # Job ORM model
+  schema.py                # Shared job field constants
+  scraper.py               # Naukri scraper -> PostgreSQL
+  resume_parser.py         # PDF/OCR text extraction + parsing
+  matcher.py               # Embeddings, geocoding, scoring
+  resume_generator.py      # Resume PDF generation
+tests/                     # pytest suite
+requirements.txt           # Runtime dependencies
+requirements-dev.txt       # Dev dependencies
+```
 
 ## Getting Started
 
 ### Prerequisites
-- Python 3.8 or higher
-- Streamlit
-- pip for installing dependencies
+
+- Python 3.10+
+- PostgreSQL running locally (default `localhost:5432`)
+- System tools (only needed for their respective features):
+  - **Tesseract OCR** — OCR of scanned resumes
+  - **Poppler** — PDF rasterisation for OCR
+  - **Google Chrome + ChromeDriver** — scraping
 
 ### Installation
+
 1. Clone the repository:
    ```bash
    git clone https://github.com/thorOdinson16/JobRelevancySearcher.git
-   ```
-2. Navigate to the project directory:
-   ```bash
    cd JobRelevancySearcher
    ```
-3. Install dependencies:
+2. Create the environment and install dependencies:
    ```bash
-   pip install -r requirements.txt
-   ```
-4. Launch the application:
-   ```bash
-   streamlit run app.py
+   bash setup.sh
+   # or, on Windows:
+   python -m venv .venv --system-site-packages
+   .venv\Scripts\activate
+   pip install -r requirements.txt -r requirements-dev.txt
+   python -m spacy download en_core_web_sm
    ```
 
-### Cloud Deployment
-1. Push the repository to a cloud platform (e.g., Streamlit Cloud, Heroku).
-2. Configure environment variables for any API keys or credentials.
-3. Access the app via the provided URL.
+### Configuration
+
+Connection settings are read from environment variables (or Streamlit secrets):
+
+| Variable       | Default       |
+| -------------- | ------------- |
+| `PGHOST`       | `localhost`   |
+| `PGPORT`       | `5432`        |
+| `PGUSER`       | `postgres`    |
+| `PGPASSWORD`   | `psql123`     |
+| `PGDATABASE`   | `jobrelevancy`|
+| `DATABASE_URL` | full override |
+
+The application creates the `jobrelevancy` database and its tables on first use.
+
+### Scrape Jobs
+
+```bash
+python -m src.scraper
+```
+
+You will be prompted for a role, location, and number of jobs. Listings are
+inserted or updated (deduplicated by URL) in PostgreSQL.
+
+### Run the App
+
+```bash
+streamlit run app.py
+```
+
+Select **PDF Generator** or **Database and AI Functions** from the sidebar.
+
+### Tests
+
+```bash
+pytest
+ruff check .
+```
 
 ## How to Use
 
-1. **Enter Your Profile**: Input your skills, experience, and preferred job location.
-2. **Upload Resume**: Upload your resume to extract and match relevant skills with job requirements.
-3. **Browse Matches**: Explore job listings ranked by relevance and proximity.
-4. **Apply Easily**: Use parsed resume data to create tailored applications directly through the platform.
+1. **Generate a resume** from the PDF Generator tab, or
+2. **Find matches**: upload a resume PDF, optionally enable location scoring,
+   and browse jobs ranked by relevance.
 
 ## Future Enhancements
 
-- Expand integration with additional job boards (e.g., LinkedIn, Indeed).
-- Add real-time resume optimization suggestions.
-- Support multiple languages for global job markets.
-- Introduce personalized dashboards to track job applications and progress.
+- Integrations with additional job boards (LinkedIn, Indeed).
+- Real-time resume optimization suggestions.
+- Multi-language support.
+- Personalized application-tracking dashboards.

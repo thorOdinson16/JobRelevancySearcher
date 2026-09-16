@@ -1,14 +1,27 @@
-geopy
-nltk
-pdf2image
-pymongo
-reportlab
-scikit-learn
-streamlit
-streamlit-folium
-transformers
-pytesseract
-spacy
-folium
-torch
-PyPDF2
+# Core web app
+streamlit==1.56.0
+streamlit-folium==0.26.2
+folium==0.20.0
+
+# Database
+SQLAlchemy==2.0.48
+psycopg2-binary==2.9.13
+
+# Scraping
+selenium==4.49.0
+
+# NLP / matching
+transformers==5.3.0
+torch>=2.2          # install the build matching your CUDA/CPU setup
+spacy==3.8.14
+scikit-learn==1.7.2
+numpy==2.2.6
+
+# Resume parsing / geolocation
+pypdf==6.19.0
+pdf2image==1.17.0
+pytesseract==0.3.13
+geopy==2.5.0
+
+# PDF generation
+reportlab==4.4.10
